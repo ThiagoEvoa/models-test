@@ -19,16 +19,19 @@ void main() {
     final mockStorage = MockSecureStorage();
     const sampleJson = '[{"title": "Item A", "score": 10}, {"title": "Item B", "score": 50}]';
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: UserFeedScreenRefactored(
-          rawFeedJson: sampleJson,
-          secureStorage: mockStorage,
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: UserFeedScreenRefactored(
+            rawFeedJson: sampleJson,
+            secureStorage: mockStorage,
+          ),
         ),
-      ),
-    );
+      );
+      await Future.delayed(const Duration(milliseconds: 200));
+    });
 
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     expect(find.text('User Live Feed (0)'), findsOneWidget);
     expect(find.text('Item B'), findsOneWidget);
