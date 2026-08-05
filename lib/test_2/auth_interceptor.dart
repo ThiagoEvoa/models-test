@@ -6,6 +6,8 @@ class AuthInterceptor {
   final ApiClient apiClient;
   final AuthRepository authRepository;
 
+  Completer<String>? _refreshCompleter;
+
   AuthInterceptor(this.apiClient, this.authRepository);
 
   Future<Map<String, dynamic>> executeRequest(String endpoint) async {
@@ -13,8 +15,23 @@ class AuthInterceptor {
       final currentToken = authRepository.accessToken;
       return await apiClient.get(endpoint, token: currentToken);
     } on UnauthorizedException {
-      // BUG: Simultaneous 401s trigger parallel refresh calls!
-      final newToken = await authRepository.refreshToken();
+      String newToken;
+
+      if (_refreshCompleter != null && !_refreshCompleter!.isCompleted) {
+        newToken = await _refreshCompleter!.future;
+      } else {
+        _refreshCompleter = Completer<String>();
+        try {
+          newToken = await authRepository.refreshToken();
+          _refreshCompleter!.complete(newToken);
+        } catch (e, st) {
+          _refreshCompleter!.completeError(e, st);
+          rethrow;
+        } finally {
+          _refreshCompleter = null;
+        }
+      }
+
       return await apiClient.get(endpoint, token: newToken);
     }
   }
