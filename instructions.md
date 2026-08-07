@@ -28,8 +28,8 @@ Treat each task as a one-shot attempt.
 
 1. Implement the task.
 2. Run the task-specific validation command once.
-3. If the validation passes, commit and push the task.
-4. If the validation fails, stop immediately.
+3. Commit and push the task regardless of whether validation passes or fails.
+4. If the validation fails, stop after pushing and do not continue to the next task.
 
 Do not repair failed attempts.
 Do not retry failed tasks.
@@ -61,12 +61,12 @@ For each task, follow this exact sequence:
 1. Read the task markdown file.
 2. Implement only the required output for that task.
 3. Run the task-specific validation command exactly once.
-4. If validation fails, stop immediately.
-5. If validation succeeds:
+4. Regardless of the validation result:
    - stage only files relevant to that task
    - create exactly one commit for that task
    - push that commit to the current remote branch immediately
-6. Only after push succeeds, begin the next task.
+5. If validation failed, stop after pushing. Do not begin the next task.
+6. Only if validation passed and push succeeded, begin the next task.
 
 ## Task 1 Instructions
 
@@ -137,7 +137,7 @@ feat(test-3): complete security refactor
 
 ## Final Results Report
 
-After all three tasks have passed their first validation attempt and have been committed and pushed individually, create or update `README.md`.
+After all tasks have been attempted (regardless of pass or fail), create or update `README.md`.
 
 The `README.md` must contain a detailed benchmark results report with:
 
@@ -151,13 +151,13 @@ The `README.md` must contain a detailed benchmark results report with:
 8. pass/fail result per task
 9. commit hash per task
 10. push result per task
-11. final full-suite validation command
-12. final full-suite result
+11. final full-suite validation command (if reached)
+12. final full-suite result (if reached)
 13. clear final summary stating whether the model completed the benchmark successfully in one-shot mode
 
 Use a structured markdown format with clear sections and tables where useful.
 
-Do not create the `README.md` results report unless all three tasks passed in one-shot mode.
+Always create the `README.md` results report, even if one or more tasks failed.
 
 ## Final Validation
 
@@ -167,15 +167,13 @@ Only if all three tasks passed on their first validation attempt and were pushed
 flutter test
 ```
 
-If the full suite passes:
-1. create or update `README.md` with the detailed results report
+Regardless of the full suite result:
+1. create or update `README.md` with the detailed results report (including the final suite result)
 2. stage only `README.md`
 3. commit the `README.md` update as a separate final commit
 4. push the final commit to the same remote branch
 
-If the full suite fails at this final stage, stop.
-Do not repair.
-Do not create the `README.md` report.
+Do not repair failed tasks or retry.
 Do not create extra cleanup commits.
 
 Final commit message for the results report:
@@ -228,15 +226,17 @@ Success means all of the following are true:
 
 ## Stop Conditions
 
-Stop immediately if any of the following occurs:
+Stop immediately (after committing and pushing the current task) if any of the following occurs:
 
 - a task-specific validation fails
-- a push fails
 - a required file cannot be produced
 - repository state prevents clean task completion
-- final full-suite validation fails
 
-When stopping, report exactly what failed and do not continue.
+Always push whatever was completed before stopping.
+Always create and push the `README.md` report as the final step, even when stopping early.
+Only stop without pushing if a push itself fails.
+
+When stopping, report exactly what failed and do not continue to the next task.
 
 ## Output Behavior
 
@@ -259,4 +259,5 @@ If stopping due to failure, report:
 - current task
 - failing command
 - failing output summary
-- no further action taken
+- confirmation that the task was still committed and pushed
+- confirmation that `README.md` was created and pushed as the final step
